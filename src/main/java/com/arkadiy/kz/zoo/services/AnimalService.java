@@ -10,14 +10,18 @@ import java.util.List;
 @Service
 public class AnimalService {
     private final AnimalRepository animalRepository;
+    private final KafkaProducerService kafkaProducerService;
 
     @Autowired
-    public AnimalService(AnimalRepository animalRepository) {
+    public AnimalService(AnimalRepository animalRepository, KafkaProducerService kafkaProducerService) {
         this.animalRepository = animalRepository;
+        this.kafkaProducerService = kafkaProducerService;
     }
 
     public Animal createAnimal(Animal animal) {
-        return animalRepository.save(animal);
+        Animal newAnimal = animalRepository.save(animal);
+        kafkaProducerService.sendMessage("Animal added: " + newAnimal);
+        return newAnimal;
     }
 
     public List<Animal> getAllAnimals() {
@@ -25,20 +29,23 @@ public class AnimalService {
     }
 
     public Animal getAnimalById(Long id) {
-        return animalRepository.findAnimalById(id)
+        return animalRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Животное не найдено"));
     }
 
     public Animal updateAnimal(Long id, Animal newAnimal) {
-        return animalRepository.findAnimalById(id).map(animal -> {
+        return animalRepository.findById(id).map(animal -> {
             animal.setName(newAnimal.getName());
             animal.setAge(newAnimal.getAge());
             animal.setType(newAnimal.getType());
-            return animalRepository.save(animal);
+            Animal updatedAnimal = animalRepository.save(animal);
+            kafkaProducerService.sendMessage("Animal updated: " + updatedAnimal);
+            return updatedAnimal;
         }).orElseThrow(() -> new RuntimeException("Животное не найдено"));
     }
 
     public void deleteAnimal(Long id) {
         animalRepository.deleteById(id);
+        kafkaProducerService.sendMessage("Animal deleted with id: " + id);
     }
 }
