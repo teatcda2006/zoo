@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class AnimalService {
@@ -27,7 +26,7 @@ public class AnimalService {
 
     public Animal getAnimalById(Long id) {
         return animalRepository.findAnimalById(id)
-                .orElseThrow();
+                .orElseThrow(() -> new RuntimeException("Животное не найдено"));
     }
 
     public Animal updateAnimal(Long id, Animal newAnimal) {

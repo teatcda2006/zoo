@@ -6,7 +6,6 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,14 +17,14 @@ public class AnimalController {
     @Autowired
     private AnimalService animalService;
 
-    @PostMapping("/")
+    @PostMapping("")
     private ResponseEntity<Object> createAnimal(@Valid @RequestBody Animal animalNew) {
         Animal animal = animalService.createAnimal(animalNew);
 
         return new ResponseEntity<>(animal, HttpStatus.OK);
     }
 
-    @GetMapping("/")
+    @GetMapping("")
     private ResponseEntity<List<Animal>> getAllAnimals() {
         List<Animal> animalList = animalService.getAllAnimals();
 
@@ -45,7 +44,7 @@ public class AnimalController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PostMapping("/{id}")
+    @DeleteMapping("/{id}")
     private ResponseEntity<Animal> deleteAnimal(@PathVariable("id") String id) {
         animalService.deleteAnimal(Long.parseLong(id));
 
