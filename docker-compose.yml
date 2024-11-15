@@ -1,14 +1,78 @@
 version: '3.8'
 services:
+  app:
+    build: .
+    container_name: app
+    networks:
+      - springapimysql
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb/zoo?useSSL=false&autoReconnect=true&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=arar123
+      - SPRING_DATASOURCE_PASSWORD=arar123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - mysqldb
+      - broker-1
+
+
+  mysqldb:
+    image: mysql:8
+    container_name: mysql
+    networks:
+      - springapimysql
+    environment:
+      MYSQL_DATABASE: zoo
+      MYSQL_USER: arar123
+      MYSQL_PASSWORD: arar123
+      MYSQL_ROOT_PASSWORD: arar123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
   zookeeper:
-    image: wurstmeister/zookeeper
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
     ports:
       - "2181:2181"
-  kafka:
-    image: wurstmeister/kafka
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker-1:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: broker-1
+    hostname: broker-1
     ports:
       - "9092:9092"
+      - "29092:29092"
+    depends_on:
+      - zookeeper
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: "test_topic:1:3"
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT, PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-1:29092, PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8086:8080"
+    depends_on:
+      - broker-1
+    environment:
+      KAFKA_CLUSTERS_NAME: local
+      KAFKA_CLUSTERS_BOOTSTRAPSERVERS: broker-1:29092
+      KAFKA_CLUSTERS_SCHEMAREGISTRY: http://schema-registry:8081
+      DYNAMIC_CONFIG_ENABLED: 'true'
+
+volumes:
+  mysql-data:
+networks:
+  springapimysql:
